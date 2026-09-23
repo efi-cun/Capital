@@ -48,7 +48,7 @@ canvas{width:100%;height:100%}
 </head>
 <body>
 <header class="topbar">
-  <div class="brand"><div class="logo">▣</div><div><h1>Dashboard Ejecutivo - Contratación Docente 2026C</h1><div class="subtitle">Seguimiento integral · Reintegros y Nuevos · Fuente: DETALLE REPORTE</div></div></div>
+  <div class="brand"><div class="logo">▣</div><div><h1>Dashboard Ejecutivo - Contratación Docente 2026C</h1><div class="subtitle">Seguimiento integral · Reintegros y Nuevos · Fuente: DETALLE REPORTE SEPT</div></div></div>
   <div class="sync"><b>⌁</b><span id="syncText">Datos actualizados · Agosto 4 · Base (34) · Vacantes (29)</span></div>
 </header>
 
@@ -109,7 +109,7 @@ canvas{width:100%;height:100%}
 
 
   <section class="panel" id="analistasVacantesPanel">
-    <div class="section-title orange"><span class="bar"></span><div><h2>Analistas y Vacantes Oficiales</h2><p>Asignación y estado de vacantes oficiales desde la hoja VACANTES OFICIALES</p></div></div>
+    <div class="section-title orange"><span class="bar"></span><div><h2>Analistas y Vacantes Oficiales</h2><p>Asignación y estado de vacantes oficiales desde la hoja VACANTES OFICIALES SEPT</p></div></div>
     <div class="analyst-panel">
       <div class="analyst-head"><div><h3>Seguimiento por analista</h3><p>Vista por analista, vacantes abiertas y detalle desplegable del lapso SELECCIÓN → CONTRATACIÓN por vacante asignada.</p></div><span class="count" id="analystCount">0 vacantes</span></div>
       <div class="analyst-summary" id="analystSummary"></div>
@@ -522,9 +522,9 @@ function parseVacantesAdministrativosSheet(ws){
 el('excelFile').addEventListener('change', async e=>{
  if(!window.XLSX){alert('No se pudo cargar el lector de Excel. Conecta a internet o usa los datos embebidos.'); return}
  const file=e.target.files[0]; if(!file)return; const buf=await file.arrayBuffer(); const book=XLSX.read(buf);
- if(!book.Sheets['DETALLE REPORTE'] && !book.Sheets['VACANTES OFICIALES']){alert('El archivo no contiene la hoja DETALLE REPORTE ni VACANTES OFICIALES.'); return}
- if(book.Sheets['DETALLE REPORTE']){const dws=book.Sheets['DETALLE REPORTE']; DATA.detalle=parseDetalleSheet(dws); DATA.summary=parseDetalleSummary(dws); DATA.breakdowns=parseDetalleBreakdowns(dws);}
- if(book.Sheets['VACANTES OFICIALES']) DATA.vacantes=parseVacantesSheet(book.Sheets['VACANTES OFICIALES']);
+ if(!book.Sheets['DETALLE REPORTE SEPT'] && !book.Sheets['VACANTES OFICIALES SEPT']){alert('El archivo no contiene la hoja DETALLE REPORTE ni VACANTES OFICIALES.'); return}
+ if(book.Sheets['DETALLE REPORTE SEPT']){const dws=book.Sheets['DETALLE REPORTE SEPT']; DATA.detalle=parseDetalleSheet(dws); DATA.summary=parseDetalleSummary(dws); DATA.breakdowns=parseDetalleBreakdowns(dws);}
+ if(book.Sheets['VACANTES OFICIALES SEPT']) DATA.vacantes=parseVacantesSheet(book.Sheets['VACANTES OFICIALES SEPT']);
  if(book.Sheets['VACANTES ADMINISTRATIVOS']) DATA.vacantes_admon=parseVacantesAdministrativosSheet(book.Sheets['VACANTES ADMINISTRATIVOS']);
  let teachers=[]; if(book.Sheets['DOCENTES REINTEGROS']) teachers=teachers.concat(parseTeacherSheet(book.Sheets['DOCENTES REINTEGROS'],'Reintegro'));
  if(book.Sheets['DOCENTES NUEVOS']) teachers=teachers.concat(parseTeacherSheet(book.Sheets['DOCENTES NUEVOS'],'Nuevo'));
@@ -571,8 +571,8 @@ async function loadDataFromGoogle() {
         let teachers = [];
         
         books.forEach(book => {
-            if(book.Sheets['DETALLE REPORTE']){const dws=book.Sheets['DETALLE REPORTE']; DATA.detalle=parseDetalleSheet(dws); DATA.summary=parseDetalleSummary(dws); DATA.breakdowns=parseDetalleBreakdowns(dws);}
-            if(book.Sheets['VACANTES OFICIALES']) DATA.vacantes=parseVacantesSheet(book.Sheets['VACANTES OFICIALES']);
+            if(book.Sheets['DETALLE REPORTE SEPT']){const dws=book.Sheets['DETALLE REPORTE SEPT']; DATA.detalle=parseDetalleSheet(dws); DATA.summary=parseDetalleSummary(dws); DATA.breakdowns=parseDetalleBreakdowns(dws);}
+            if(book.Sheets['VACANTES OFICIALES SEPT']) DATA.vacantes=parseVacantesSheet(book.Sheets['VACANTES OFICIALES SEPT']);
             if(book.Sheets['VACANTES ADMINISTRATIVOS']) DATA.vacantes_admon=parseVacantesAdministrativosSheet(book.Sheets['VACANTES ADMINISTRATIVOS']);
             if(book.Sheets['DOCENTES REINTEGROS']) teachers=teachers.concat(parseTeacherSheet(book.Sheets['DOCENTES REINTEGROS'],'Reintegro'));
             if(book.Sheets['DOCENTES NUEVOS']) teachers=teachers.concat(parseTeacherSheet(book.Sheets['DOCENTES NUEVOS'],'Nuevo'));
