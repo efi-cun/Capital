@@ -44,11 +44,15 @@ canvas{width:100%;height:100%}
 @media(max-width:1100px){.filters-grid{grid-template-columns:repeat(3,1fr)}.kpi-grid,.metric-grid{grid-template-columns:repeat(2,1fr)}.cards-3,.new-layout,.validation-grid{grid-template-columns:1fr}.breakdown-row{grid-template-columns:1fr}}
 @media(max-width:650px){.filters-grid,.kpi-grid,.metric-grid,.val-cards{grid-template-columns:1fr}.topbar{align-items:flex-start;gap:10px;flex-direction:column}.container{padding:0 10px}}
 </style>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
 <body>
+<div id="loadingOverlay" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(255,255,255,0.9);z-index:9999;justify-content:center;align-items:center;flex-direction:column;">
+    <div class="spinner" style="border: 4px solid #f3f3f3; border-top: 4px solid #0B5CD7; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite;"></div>
+    <p style="margin-top: 15px; font-weight: bold; color: #123A78;">Cargando datos desde Google Sheets...</p>
+</div>
+<style>@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }</style>
 <header class="topbar">
-  <div class="brand"><div class="logo">▣</div><div><h1>Dashboard Ejecutivo - Contratación Docente 2026C</h1><div class="subtitle">Seguimiento integral · Reintegros y Nuevos · Fuente: DETALLE REPORTE SEPT</div></div></div>
+  <div class="brand"><div class="logo">▣</div><div><h1>Dashboard Ejecutivo - Contratación Docente 2026C</h1><div class="subtitle">Seguimiento integral · Reintegros y Nuevos · Fuente: DETALLE REPORTE</div></div></div>
   <div class="sync"><b>⌁</b><span id="syncText">Datos actualizados · Agosto 4 · Base (34) · Vacantes (29)</span></div>
 </header>
 
@@ -66,31 +70,16 @@ canvas{width:100%;height:100%}
     </div>
     <div class="filter-actions">
       <label class="file-note">Actualizar desde Excel: <input id="excelFile" type="file" accept=".xlsx,.xls"></label>
-      <div>
-        <button class="btn" id="downloadPdfBtn" style="background:#E11D48;color:white;border:none;padding:9px 15px;border-radius:6px;cursor:pointer;font-weight:bold;margin-right:10px;">📄 Descargar PDF</button>
-        <button class="btn" id="updateCloudBtn" style="background:#15925E;color:white;border:none;padding:9px 15px;border-radius:6px;cursor:pointer;font-weight:bold;margin-right:10px;">☁️ Actualizar (Google)</button>
-        <button class="btn secondary" id="clearBtn">↻ Limpiar</button></div>
-    </div>
-  </section>
-
-  <section class="panel" style="display:none;">
-    <div class="section-title"><span class="bar"></span><div><h2>Resumen General</h2><p>Indicadores ejecutivos clave</p></div></div>
-    <div class="kpi-grid" id="kpiGrid"></div>
-  </section>
-
-  <section class="panel" style="display:none;">
-    <div class="section-title"><span class="bar"></span><div><h2>Docentes de Reintegros</h2><p>Junio 01 - Julio 30</p></div></div>
-    <div class="cards-3">
-      <div>
-        <div class="metric-grid" id="reintCards"></div>
-        <div class="breakdown-row">
-          <div class="breakdown"><header><div><h3>Exámenes Médicos - Reintegros</h3><p style="margin:2px 0 0;color:#687993;font-size:11px">Control detallado de exámenes</p></div><span id="reintExamTotal">0<small>TOTAL</small></span></header><div id="reintExamBars"></div></div>
-          <div class="breakdown"><header><div><h3>Documentación - Reintegros</h3><p style="margin:2px 0 0;color:#687993;font-size:11px">Estado documental</p></div><span id="reintDocTotal">0<small>TOTAL</small></span></header><div id="reintDocBars"></div></div>
-        </div>
+      <div style="display: flex; gap: 8px;">
+        <button class="btn secondary" id="btnSyncGoogle" style="border-color:#1FA06A; color:#1FA06A;">⌁ Actualizar desde Google</button>
+        <button class="btn secondary" id="btnSaveHTML" style="border-color:#0B5CD7; color:#0B5CD7;">💾 Guardar HTML</button>
+        <button class="btn secondary" id="clearBtn">↻ Limpiar</button>
       </div>
-      <div class="gauge-card"><div style="align-self:flex-start;text-transform:uppercase;font-size:11px;font-weight:850;color:#71829A">Avance Reintegros</div><canvas id="gaugeReint" class="gauge" width="480" height="300"></canvas><div class="gauge-text"><strong id="reintGaugeTxt">0%</strong><span>Firmados</span></div><div class="totals-split"><div class="split"><b id="reintFirmados">0</b>Firmados</div><div class="split orange"><b id="reintPendientes">0</b>Pendientes</div></div></div>
     </div>
   </section>
+
+
+
 
   <section class="panel">
     <div class="section-title orange"><span class="bar"></span><div><h2>Docentes Nuevos</h2><p>Flujo de selección y contratación</p></div></div>
@@ -105,11 +94,8 @@ canvas{width:100%;height:100%}
       <aside class="selection"><h3>⌕ Selección - Nuevos</h3><div class="select-list" id="selectionList"></div><hr style="border:0;border-top:1px solid #FFDCC1;margin:12px 0 20px"><div class="gauge-card" style="border:0;background:transparent;min-height:210px;padding:0"><canvas id="gaugeNew" class="gauge" width="480" height="300"></canvas><div class="gauge-text"><strong id="newGaugeTxt" style="color:var(--orange)">0%</strong><span>Avance Nuevos</span></div></div></aside>
     </div>
   </section>
-
-
-
   <section class="panel" id="analistasVacantesPanel">
-    <div class="section-title orange"><span class="bar"></span><div><h2>Analistas y Vacantes Oficiales</h2><p>Asignación y estado de vacantes oficiales desde la hoja VACANTES OFICIALES SEPT</p></div></div>
+    <div class="section-title orange"><span class="bar"></span><div><h2>Analistas y Vacantes Oficiales</h2><p>Asignación y estado de vacantes oficiales desde la hoja VACANTES OFICIALES</p></div></div>
     <div class="analyst-panel">
       <div class="analyst-head"><div><h3>Seguimiento por analista</h3><p>Vista por analista, vacantes abiertas y detalle desplegable del lapso SELECCIÓN → CONTRATACIÓN por vacante asignada.</p></div><span class="count" id="analystCount">0 vacantes</span></div>
       <div class="analyst-summary" id="analystSummary"></div>
@@ -120,15 +106,15 @@ canvas{width:100%;height:100%}
 
 
 
-  <section class="panel" id="analistasVacantesAdmonPanel">
-    <div class="section-title orange"><span class="bar"></span><div><h2>Analistas y Vacantes ADMON</h2><p>Asignación y estado de vacantes administrativas desde la hoja VACANTES ADMINISTRATIVOS · Propietarios activos</p></div></div>
-    <div class="analyst-panel">
-      <div class="analyst-head"><div><h3>Seguimiento por analista</h3><p>Vista por propietario, estados desde Estado REQ y promedio de lapso según Tiempo de cierre.</p></div><span class="count" id="admonAnalystCount">0 vacantes</span></div>
-      <div class="analyst-summary" id="admonAnalystSummary"></div>
-      <div class="analyst-grid" id="admonAnalystGrid"></div>
-      <div class="analyst-detail"><table><thead><tr><th>ANALISTA</th><th>REQ.</th><th>CARGO</th><th>VICERRECTORÍA</th><th>CENTRO DE COSTO</th><th>CIUDAD</th><th>ESTADO REQ</th><th>FECHA CREACIÓN</th><th>FECHA CONTRATACIÓN</th><th>TIEMPO DE CIERRE</th></tr></thead><tbody id="admonAnalystRows"></tbody></table></div>
-    </div>
-  </section>
+
+
+
+
+
+
+
+
+
 
   <section class="panel chart-panel">
     <div class="section-title green"><span class="bar"></span><div><h2>Comparativo por Escuela</h2><p>Reintegros · Nuevos · Contratos Firmados</p></div></div>
@@ -231,50 +217,50 @@ function render(){
  const seleccionados=sinFiltros&&DATA.summary ? num(DATA.summary.seleccionados) : sum(d,'seleccionado');
  const pendSalario=sinFiltros&&DATA.summary ? num(DATA.summary.pend_salario) : sum(d,'pend_salario');
  const planta=sum(d,'planta'), programs=uniq(d.map(r=>r.programa)).length;
- el('kpiGrid').innerHTML=[
-   kpiCard('Planta sentada',fmt(planta),`${programs} programas`,'#0EA5E9','♧'),
-   kpiCard('Total reintegros',fmt(totalReint),'Docentes a reintegrar','#0B5CD7','♧'),
-   kpiCard('Vacantes nuevas',fmt(totalNewDisplay),'Por seleccionar/contratar','#FF7A14','◎'),
-   kpiCard('Avance global',pct(firm,total).toFixed(1)+'%',`${fmt(firm)} contratos firmados`,'#1FA06A','◈')
- ].join('');
- const reintExam=sinFiltros&&DATA.summary&&DATA.summary.exam_reint!=null ? num(DATA.summary.exam_reint) : sum(d,'exam_reint');
- const reintDoc=sinFiltros&&DATA.summary&&DATA.summary.doc_reint!=null ? num(DATA.summary.doc_reint) : sum(d,'doc_reint');
- const reintComplete=sinFiltros&&DATA.summary&&DATA.summary.proceso_comp_reint!=null ? num(DATA.summary.proceso_comp_reint) : sum(d,'proceso_comp_reint');
- const reintInProcess=sinFiltros&&DATA.summary&&DATA.summary.docentes_en_proceso!=null ? num(DATA.summary.docentes_en_proceso) : sum(d,'docentes_en_proceso');
- const reintContract=sinFiltros&&DATA.summary&&DATA.summary.proc_contrato_reint!=null ? num(DATA.summary.proc_contrato_reint) : sum(d,'proc_contrato_reint');
- const newCitation=sinFiltros&&DATA.summary&&DATA.summary.citacion_exam_docs!=null ? num(DATA.summary.citacion_exam_docs) : sum(d,'citacion_exam_docs');
- const newExam=sinFiltros&&DATA.summary&&DATA.summary.exam_nuevos!=null ? num(DATA.summary.exam_nuevos) : sum(d,'exam_nuevos');
- const newDoc=sinFiltros&&DATA.summary&&DATA.summary.doc_nuevos!=null ? num(DATA.summary.doc_nuevos) : sum(d,'doc_nuevos');
- const newComplete=sinFiltros&&DATA.summary&&DATA.summary.proceso_comp_nuevos!=null ? num(DATA.summary.proceso_comp_nuevos) : sum(d,'proceso_comp_nuevos');
- const newContract=sinFiltros&&DATA.summary&&DATA.summary.proc_contrato_nuevos!=null ? num(DATA.summary.proc_contrato_nuevos) : sum(d,'proc_contrato_nuevos');
- el('reintCards').innerHTML=[
-   miniCard('Total vacantes reintegros',totalReint,pct(totalReint,totalReint)),
-   miniCard('Exámenes médicos OK',reintExam,pct(reintExam,totalReint)),
-   miniCard('Documentación completa',reintDoc,pct(reintDoc,totalReint)),
-   miniCard('Proceso completo de contratación',reintComplete,pct(reintComplete,totalReint)),
-   miniCard('Docentes en proceso de contratación',reintInProcess,pct(reintInProcess,totalReint),'orange'),
-   miniCard('Proceso de contrato',reintContract,pct(reintContract,totalReint),'orange'),
-   miniCard('Pendiente de firma',pendFirmaReint,pct(pendFirmaReint,totalReint),'orange'),
-   miniCard('Contratos firmados',firmReint,pct(firmReint,totalReint),'green')
- ].join('');
- el('newCards').innerHTML=[
-   miniCard('Seleccionado',seleccionados,pct(seleccionados,totalNew)),
-   miniCard('Pendiente confirmación salario',pendSalario,pct(pendSalario,seleccionados),'orange'),
-   miniCard('Citación a examen y solicitud de documentos',newCitation,pct(newCitation,newProcessBase)),
-   miniCard('Exámenes médicos OK',newExam,pct(newExam,newProcessBase)),
-   miniCard('Documentación completa',newDoc,pct(newDoc,newProcessBase)),
-   miniCard('Proceso completo de contratación',newComplete,pct(newComplete,newProcessBase)),
-   miniCard('Proceso de contrato',newContract,pct(newContract,newProcessBase),'orange'),
-   miniCard('Pendiente de firma',pendFirmaNew,pct(pendFirmaNew,newProcessBase),'orange'),
-   miniCard('Contratos firmados',firmNew,pct(firmNew,totalNew),'green')
- ].join('');
- el('selectionList').innerHTML=[
-  ['Total Vacantes Nuevos',totalNewDisplay],['Pausa pendiente',sum(d,'pausa_pendiente')],['Pausa confirmada',sum(d,'pausa_confirmada')],['Doc selecc pausado',sum(d,'doc_selecc_pausado')],['Reclutamiento',sum(d,'reclutamiento')],['Citado a Entrevista (Analista)',sum(d,'entrevista_analista')],['Citado a Entrevista (LITE)',sum(d,'entrevista_lite')],['Seleccionado',seleccionados,'accent']
- ].map(x=>`<div class="select-item ${x[2]||''}"><span>${x[0]}</span><b>${fmt(x[1])}</b></div>`).join('');
- drawGauge('gaugeReint', pct(firmReint,totalReint), '#1FA06A'); el('reintGaugeTxt').textContent=pct(firmReint,totalReint).toFixed(1)+'%'; el('reintFirmados').textContent=fmt(firmReint); el('reintPendientes').textContent=fmt(Math.max(0,totalReint-firmReint));
- drawGauge('gaugeNew', pct(firmNew,totalNewDisplay), '#FF7A14'); el('newGaugeTxt').textContent=pct(firmNew,totalNewDisplay).toFixed(1)+'%';
- renderBreakdowns(t, d); renderAnalystVacancies();
- renderAdmonVacancies(); renderSchoolChart(d); renderValidation(d); renderTable(t);
+//  el('kpiGrid').innerHTML=[
+//    kpiCard('Planta sentada',fmt(planta),`${programs} programas`,'#0EA5E9','♧'),
+//    kpiCard('Total reintegros',fmt(totalReint),'Docentes a reintegrar','#0B5CD7','♧'),
+// kpiCard('Vacantes nuevas',fmt(totalNewDisplay),'Por seleccionar/contratar','#FF7A14','◎'),
+//    kpiCard('Avance global',pct(firm,total).toFixed(1)+'%',`${fmt(firm)} contratos firmados`,'#1FA06A','◈')
+//  ].join('');
+//  const reintExam=sinFiltros&&DATA.summary&&DATA.summary.exam_reint!=null ? num(DATA.summary.exam_reint) : sum(d,'exam_reint');
+//  const reintDoc=sinFiltros&&DATA.summary&&DATA.summary.doc_reint!=null ? num(DATA.summary.doc_reint) : sum(d,'doc_reint');
+//  const reintComplete=sinFiltros&&DATA.summary&&DATA.summary.proceso_comp_reint!=null ? num(DATA.summary.proceso_comp_reint) : sum(d,'proceso_comp_reint');
+//  const reintInProcess=sinFiltros&&DATA.summary&&DATA.summary.docentes_en_proceso!=null ? num(DATA.summary.docentes_en_proceso) : sum(d,'docentes_en_proceso');
+//  const reintContract=sinFiltros&&DATA.summary&&DATA.summary.proc_contrato_reint!=null ? num(DATA.summary.proc_contrato_reint) : sum(d,'proc_contrato_reint');
+const newCitation=sinFiltros&&DATA.summary&&DATA.summary.citacion_exam_docs!=null ? num(DATA.summary.citacion_exam_docs) : sum(d,'citacion_exam_docs');
+const newExam=sinFiltros&&DATA.summary&&DATA.summary.exam_nuevos!=null ? num(DATA.summary.exam_nuevos) : sum(d,'exam_nuevos');
+const newDoc=sinFiltros&&DATA.summary&&DATA.summary.doc_nuevos!=null ? num(DATA.summary.doc_nuevos) : sum(d,'doc_nuevos');
+const newComplete=sinFiltros&&DATA.summary&&DATA.summary.proceso_comp_nuevos!=null ? num(DATA.summary.proceso_comp_nuevos) : sum(d,'proceso_comp_nuevos');
+const newContract=sinFiltros&&DATA.summary&&DATA.summary.proc_contrato_nuevos!=null ? num(DATA.summary.proc_contrato_nuevos) : sum(d,'proc_contrato_nuevos');
+//  el('reintCards').innerHTML=[
+//    miniCard('Total vacantes reintegros',totalReint,pct(totalReint,totalReint)),
+//    miniCard('Exámenes médicos OK',reintExam,pct(reintExam,totalReint)),
+//    miniCard('Documentación completa',reintDoc,pct(reintDoc,totalReint)),
+//    miniCard('Proceso completo de contratación',reintComplete,pct(reintComplete,totalReint)),
+//    miniCard('Docentes en proceso de contratación',reintInProcess,pct(reintInProcess,totalReint),'orange'),
+//    miniCard('Proceso de contrato',reintContract,pct(reintContract,totalReint),'orange'),
+//    miniCard('Pendiente de firma',pendFirmaReint,pct(pendFirmaReint,totalReint),'orange'),
+//    miniCard('Contratos firmados',firmReint,pct(firmReint,totalReint),'green')
+//  ].join('');
+el('newCards').innerHTML=[
+miniCard('Seleccionado',seleccionados,pct(seleccionados,totalNew)),
+miniCard('Pendiente confirmación salario',pendSalario,pct(pendSalario,seleccionados),'orange'),
+miniCard('Citación a examen y solicitud de documentos',newCitation,pct(newCitation,newProcessBase)),
+miniCard('Exámenes médicos OK',newExam,pct(newExam,newProcessBase)),
+miniCard('Documentación completa',newDoc,pct(newDoc,newProcessBase)),
+miniCard('Proceso completo de contratación',newComplete,pct(newComplete,newProcessBase)),
+miniCard('Proceso de contrato',newContract,pct(newContract,newProcessBase),'orange'),
+miniCard('Pendiente de firma',pendFirmaNew,pct(pendFirmaNew,newProcessBase),'orange'),
+miniCard('Contratos firmados',firmNew,pct(firmNew,totalNew),'green')
+].join('');
+el('selectionList').innerHTML=[
+['Total Vacantes Nuevos',totalNewDisplay],['Pausa pendiente',sum(d,'pausa_pendiente')],['Pausa confirmada',sum(d,'pausa_confirmada')],['Doc selecc pausado',sum(d,'doc_selecc_pausado')],['Reclutamiento',sum(d,'reclutamiento')],['Citado a Entrevista (Analista)',sum(d,'entrevista_analista')],['Citado a Entrevista (LITE)',sum(d,'entrevista_lite')],['Seleccionado',seleccionados,'accent']
+].map(x=>`<div class="select-item ${x[2]||''}"><span>${x[0]}</span><b>${fmt(x[1])}</b></div>`).join('');
+// drawGauge('gaugeReint', pct(firmReint,totalReint), '#1FA06A'); el('reintGaugeTxt').textContent=pct(firmReint,totalReint).toFixed(1)+'%'; el('reintFirmados').textContent=fmt(firmReint); el('reintPendientes').textContent=fmt(Math.max(0,totalReint-firmReint));
+drawGauge('gaugeNew', pct(firmNew,totalNewDisplay), '#FF7A14'); el('newGaugeTxt').textContent=pct(firmNew,totalNewDisplay).toFixed(1)+'%';
+  renderBreakdowns(t, d); renderAnalystVacancies();
+  renderSchoolChart(d); renderValidation(d); renderTable(t);
 }
 function counter(rows, type, field){
  const c={}; rows.filter(t=>t.tipo===type).forEach(t=>{let v=clean(t[field])||'SIN RESPUESTA'; c[v]=(c[v]||0)+1}); return c;
@@ -299,16 +285,16 @@ function hasActiveFilter(){
 }
 function renderBreakdowns(t,d){
  const b=DATA.breakdowns||{};
- const reintExamTotal=Number(b.reint_exam_total??b.reint_total??315);
- const reintDocTotal=Number(b.reint_doc_total??b.reint_total??315);
+//  const reintExamTotal=Number(b.reint_exam_total??b.reint_total??315);
+//  const reintDocTotal=Number(b.reint_doc_total??b.reint_total??315);
  const newExamTotal=Number(b.new_exam_total??b.new_total??111);
  const newDocTotal=Number(b.new_doc_total??b.new_total??111);
- el('reintExamTotal').innerHTML=fmt(reintExamTotal)+'<small>TOTAL</small>'; el('reintDocTotal').innerHTML=fmt(reintDocTotal)+'<small>TOTAL</small>';
+//  el('reintExamTotal').innerHTML=fmt(reintExamTotal)+'<small>TOTAL</small>'; el('reintDocTotal').innerHTML=fmt(reintDocTotal)+'<small>TOTAL</small>';
  el('newExamTotal').innerHTML=fmt(newExamTotal)+'<small>TOTAL</small>'; el('newDocTotal').innerHTML=fmt(newDocTotal)+'<small>TOTAL</small>';
  const examKeys=['EN GESTION DE CONVOCATORIA','PTE CONFIRMACION DE PROCESO','CONVOCADO A PROCESO','PTE CONCEPTO','EN VALIDACION','OK PROCESO'];
  const docKeys=['SIN RESPUESTA DOCUMENTOS','VALIDACION DOCUMENTOS','DOCUMENTOS INCOMPLETOS','DOCUMENTOS COMPLETOS'];
- renderBars('reintExamBars', b.reint_exam||{}, reintExamTotal,'#344256',examKeys);
- renderBars('reintDocBars', b.reint_doc||{}, reintDocTotal,'#0B5CD7',docKeys);
+//  renderBars('reintExamBars', b.reint_exam||{}, reintExamTotal,'#344256',examKeys);
+//  renderBars('reintDocBars', b.reint_doc||{}, reintDocTotal,'#0B5CD7',docKeys);
  renderBars('newExamBars', b.new_exam||{}, newExamTotal,'#344256',examKeys);
  renderBars('newDocBars', b.new_doc||{}, newDocTotal,'#FF7A14',docKeys);
 }
@@ -480,22 +466,46 @@ function exportCSV(){
 }
 function parseDetalleSheet(ws){
  const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
- const hasPaused=clean(((rows[3]||[])[15])).toUpperCase().includes('DOC SELECC PAUSADO');
- const shift=hasPaused?1:0;
- const out=[]; for(let i=4;i<rows.length;i++){let r=rows[i]; if(clean(r[1]).toLowerCase().startsWith('total general'))break; if(!r[0]&&!r[1])continue; out.push({escuela:clean(r[0]),programa:clean(r[1]),planta:num(r[2]),total_reintegros:num(r[3]),exam_reint:num(r[4]),doc_reint:num(r[5]),proceso_comp_reint:num(r[6]),docentes_en_proceso:num(r[7]),proc_contrato_reint:num(r[8]),pend_cambio_reint:num(r[9]),pend_firma_reint:num(r[10]),contratos_reint:num(r[11]),total_nuevos:num(r[12]),pausa_pendiente:num(r[13]),pausa_confirmada:num(r[14]),doc_selecc_pausado:hasPaused?num(r[15]):0,reclutamiento:num(r[15+shift]),entrevista_analista:num(r[16+shift]),entrevista_lite:num(r[17+shift]),seleccionado:num(r[18+shift]),pend_salario:num(r[19+shift]),citacion_exam_docs:num(r[20+shift]),exam_nuevos:num(r[21+shift]),doc_nuevos:num(r[22+shift]),proceso_comp_nuevos:num(r[23+shift]),proc_contrato_nuevos:num(r[24+shift]),pend_cambio_nuevos:num(r[25+shift]),pend_firma_nuevos:num(r[26+shift]),contratos_nuevos:num(r[27+shift]),faltantes:num(r[28+shift]),desiste_reint:num(r[32+shift]),backup_reint:num(r[33+shift]),renuncia_reint:num(r[34+shift]),programa_no_cont_reint:num(r[35+shift]),no_cumple_final_reint:num(r[36+shift]),desiste_nuevos:num(r[37+shift]),backup_nuevos:num(r[38+shift]),renuncia_nuevos:num(r[39+shift]),programa_no_cont_nuevos:num(r[40+shift]),no_cumple_final_doc_nuevos:num(r[41+shift]),no_cumple_final_nuevos:num(r[42+shift]),vacantes_mayo:num(r[44+shift]),vacantes_agosto:num(r[45+shift])});} return out;
+ const out=[];
+ for(let i=4;i<rows.length;i++){
+  const r=rows[i]||[]; if(clean(r[1]).toLowerCase().startsWith('total general'))break;
+  if(!r[0]&&!r[1])continue;
+  out.push({
+   escuela: clean(r[0]), programa: clean(r[1]),
+   total_nuevos: num(r[2]), pausa_pendiente: num(r[3]), pausa_confirmada: num(r[4]),
+   doc_selecc_pausado: num(r[5]), reclutamiento: num(r[6]), entrevista_analista: num(r[7]),
+   entrevista_lite: num(r[8]), seleccionado: num(r[9]), pend_salario: num(r[10]),
+   citacion_exam_docs: num(r[11]), exam_nuevos: num(r[12]), doc_nuevos: num(r[13]),
+   proceso_comp_nuevos: num(r[14]), proc_contrato_nuevos: num(r[15]), pend_cambio_nuevos: num(r[16]),
+   pend_firma_nuevos: num(r[17]), contratos_nuevos: num(r[18]), faltantes: num(r[19]),
+   desiste_nuevos: num(r[23]), backup_nuevos: num(r[24]), renuncia_nuevos: num(r[25]),
+   programa_no_cont_nuevos: num(r[26]), no_cumple_final_doc_nuevos: num(r[27]),
+   no_cumple_final_nuevos: num(r[28])
+  });
+ }
+ return out;
 }
 
 function parseDetalleSummary(ws){
- const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''}); const total=rows[54]||[];
- const hasPaused=clean(((rows[3]||[])[15])).toUpperCase().includes('DOC SELECC PAUSADO'); const shift=hasPaused?1:0;
+ const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''}); const total=rows[55]||[];
  const cell=(row,col)=>num(((rows[row-1]||[])[col-1]));
- return {total_vacantes_nuevos:num(total[12]),total_nuevos:cell(124,3),seleccionados:num(total[18+shift]),pend_salario:num(total[19+shift]),pausa_pendiente:num(total[13]),pausa_confirmada:num(total[14]),doc_selecc_pausado:hasPaused?num(total[15]):0,firm_reint:num(total[11]),pend_firma_reint:num(total[10]),firm_new:num(total[27+shift]),pend_firma_new:num(total[26+shift]),total_reintegros:num(total[3]),new_process_base:cell(124,3),citacion_exam_docs:num(total[20+shift]),exam_nuevos:num(total[21+shift]),doc_nuevos:num(total[22+shift]),proceso_comp_nuevos:num(total[23+shift]),proc_contrato_nuevos:num(total[24+shift]),exam_reint:num(total[4]),doc_reint:num(total[5]),proceso_comp_reint:num(total[6]),docentes_en_proceso:num(total[7]),proc_contrato_reint:num(total[8])};
+ return {
+  total_vacantes_nuevos:num(total[2]), total_nuevos:num(total[2]), seleccionados:num(total[9]),
+  pend_salario:num(total[10]), pausa_pendiente:num(total[3]), pausa_confirmada:num(total[4]),
+  doc_selecc_pausado:num(total[5]), firm_new:num(total[18]), pend_firma_new:num(total[17]),
+  new_process_base:num(total[9]), citacion_exam_docs:num(total[11]), exam_nuevos:num(total[12]),
+  doc_nuevos:num(total[13]), proceso_comp_nuevos:num(total[14]), proc_contrato_nuevos:num(total[15])
+ };
 }
+
 function parseDetalleBreakdowns(ws){
  const rows=XLSX.utils.sheet_to_json(ws,{header:1,defval:''});
  const items=(a,b)=>{const o={}; for(let r=a;r<=b;r++){const row=rows[r-1]||[], label=clean(row[1]); if(label)o[label]=num(row[2]);} return o;};
  const cell=(row,col)=>num(((rows[row-1]||[])[col-1]));
- return {reint_exam:items(106,111),reint_doc:items(113,116),reint_total:cell(105,3),reint_exam_total:cell(105,3),reint_doc_total:cell(112,3),new_exam:items(125,130),new_doc:items(132,135),new_total:cell(124,3),new_exam_total:cell(124,3),new_doc_total:cell(131,3)};
+ return {
+  new_exam:items(88,93), new_doc:items(95,98),
+  new_total:cell(87,3), new_exam_total:cell(87,3), new_doc_total:cell(94,3)
+ };
 }
 
 function parseTeacherSheet(ws, type){
@@ -522,9 +532,9 @@ function parseVacantesAdministrativosSheet(ws){
 el('excelFile').addEventListener('change', async e=>{
  if(!window.XLSX){alert('No se pudo cargar el lector de Excel. Conecta a internet o usa los datos embebidos.'); return}
  const file=e.target.files[0]; if(!file)return; const buf=await file.arrayBuffer(); const book=XLSX.read(buf);
- if(!book.Sheets['DETALLE REPORTE SEPT'] && !book.Sheets['VACANTES OFICIALES SEPT']){alert('El archivo no contiene la hoja DETALLE REPORTE ni VACANTES OFICIALES.'); return}
- if(book.Sheets['DETALLE REPORTE SEPT']){const dws=book.Sheets['DETALLE REPORTE SEPT']; DATA.detalle=parseDetalleSheet(dws); DATA.summary=parseDetalleSummary(dws); DATA.breakdowns=parseDetalleBreakdowns(dws);}
- if(book.Sheets['VACANTES OFICIALES SEPT']) DATA.vacantes=parseVacantesSheet(book.Sheets['VACANTES OFICIALES SEPT']);
+ if(!book.Sheets['DETALLE REPORTE'] && !book.Sheets['VACANTES OFICIALES']){alert('El archivo no contiene la hoja DETALLE REPORTE ni VACANTES OFICIALES.'); return}
+ if(book.Sheets['DETALLE REPORTE']){const dws=book.Sheets['DETALLE REPORTE']; DATA.detalle=parseDetalleSheet(dws); DATA.summary=parseDetalleSummary(dws); DATA.breakdowns=parseDetalleBreakdowns(dws);}
+ if(book.Sheets['VACANTES OFICIALES']) DATA.vacantes=parseVacantesSheet(book.Sheets['VACANTES OFICIALES']);
  if(book.Sheets['VACANTES ADMINISTRATIVOS']) DATA.vacantes_admon=parseVacantesAdministrativosSheet(book.Sheets['VACANTES ADMINISTRATIVOS']);
  let teachers=[]; if(book.Sheets['DOCENTES REINTEGROS']) teachers=teachers.concat(parseTeacherSheet(book.Sheets['DOCENTES REINTEGROS'],'Reintegro'));
  if(book.Sheets['DOCENTES NUEVOS']) teachers=teachers.concat(parseTeacherSheet(book.Sheets['DOCENTES NUEVOS'],'Nuevo'));
@@ -532,105 +542,89 @@ el('excelFile').addEventListener('change', async e=>{
  filters.forEach(id=>el(id).value=''); el('searchBox').value=''; el('syncText').textContent='Datos actualizados desde Excel'; render();
 });
 filters.forEach(id=>el(id).addEventListener('change', render));
-el('searchBox').addEventListener('input', render); el('clearBtn').addEventListener('click',()=>{filters.forEach(id=>el(id).value='');el('searchBox').value='';render()}); el('exportBtn').addEventListener('click',exportCSV);
-render();
+el('searchBox').addEventListener('input', render); 
+el('clearBtn').addEventListener('click',()=>{filters.forEach(id=>el(id).value='');el('searchBox').value='';render()}); 
+el('exportBtn').addEventListener('click',exportCSV);
 
-// --- LOGICA DE ACTUALIZACION DESDE GOOGLE Y PDF ---
-async function loadDataFromGoogle() {
+// Nuevas funciones
+const urlVacantes = "https://script.google.com/macros/s/AKfycbzr7Y3_h15mcCv2clj9q9I5f-5YaBQ-wKtgFMrVDr5UrbCu20Ml-30JylhKzOX-mPsZ/exec";
+const urlNuevos = "https://script.google.com/macros/s/AKfycbyoQGV49M_4VTPrsKguv5mTHLpX0ObdUDl1Z3CJJ8i_9ChIBlGWI90vcebzTQsfoDrMyA/exec";
+
+async function fetchGoogleData() {
+    el('loadingOverlay').style.display = 'flex';
     try {
-        if(!window.XLSX){alert('No se pudo cargar el lector de Excel.'); return;}
+        const [resVacantes, resNuevos] = await Promise.all([
+            fetch(urlVacantes, { redirect: 'follow' }).then(r => r.json()),
+            fetch(urlNuevos, { redirect: 'follow' }).then(r => r.json())
+        ]);
         
-        el('loadingOverlay').style.display = 'flex';
-        if(el('updateCloudBtn')) {
-            el('updateCloudBtn').innerText = '☁️ Descargando...';
-            el('updateCloudBtn').style.opacity = '0.7';
+        function b64ToArrayBuffer(base64) {
+            const binary_string = window.atob(base64);
+            const len = binary_string.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) { bytes[i] = binary_string.charCodeAt(i); }
+            return bytes.buffer;
         }
 
-        const SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyiIyTt8NvIggdvXDVIZQG1vCWttshWcy6eEcv69vz4wujkMBnnmD7fcUDQPVPOP9zR4w/exec';
-        
-        const res = await fetch(SCRIPT_URL);
-        const json = await res.json();
-        
-        if (json.status !== 'success') {
-            throw new Error(json.message);
+        if (resVacantes && resVacantes.vacantesData) {
+            const book = XLSX.read(b64ToArrayBuffer(resVacantes.vacantesData), {type: 'array'});
+            let ws = book.Sheets['VACANTES OFICIALES SEPT'] || book.Sheets['VACANTES OFICIALES'];
+            if (ws) DATA.vacantes = parseVacantesSheet(ws);
+            // Vaciamos Admon porque no aplica para este reporte
+            DATA.vacantes_admon = [];
         }
-
-        const binaryString1 = window.atob(json.baseData);
-        const len1 = binaryString1.length;
-        const bytes1 = new Uint8Array(len1);
-        for (let i = 0; i < len1; i++) { bytes1[i] = binaryString1.charCodeAt(i); }
-        const book1 = XLSX.read(bytes1.buffer);
-
-        const binaryString2 = window.atob(json.vacantesData);
-        const len2 = binaryString2.length;
-        const bytes2 = new Uint8Array(len2);
-        for (let i = 0; i < len2; i++) { bytes2[i] = binaryString2.charCodeAt(i); }
-        const book2 = XLSX.read(bytes2.buffer);
         
-        const books = [book1, book2];
-        let teachers = [];
+        if (resNuevos && resNuevos.vacantesData) {
+            const book = XLSX.read(b64ToArrayBuffer(resNuevos.vacantesData), {type: 'array'});
+            // El layout de DETALLE REPORTE cambió en la versión SEPT, rompiendo parseDetalleSummary
+            // Por lo tanto, leemos estrictamente 'DETALLE REPORTE' (la versión original) para los breakdowns y kpis.
+            let wsDetalle = book.Sheets['DETALLE REPORTE SEPT'] || book.Sheets['DETALLE REPORTE'];
+            if (wsDetalle) {
+                DATA.detalle = parseDetalleSheet(wsDetalle); 
+                DATA.summary = parseDetalleSummary(wsDetalle); 
+                DATA.breakdowns = parseDetalleBreakdowns(wsDetalle);
+            }
+            let teachers=[]; 
+            let wsNuevos = book.Sheets['DOCENTES NUEVOS SEPT'] || book.Sheets['DOCENTES NUEVOS'];
+            if (wsNuevos) teachers = teachers.concat(parseTeacherSheet(wsNuevos,'Nuevo'));
+            let wsReint = book.Sheets['DOCENTES REINTEGROS SEPT'] || book.Sheets['DOCENTES REINTEGROS'];
+            if (wsReint) teachers = teachers.concat(parseTeacherSheet(wsReint,'Reintegro'));
+            if(teachers.length) DATA.teachers = teachers;
+        }
         
-        books.forEach(book => {
-            if(book.Sheets['DETALLE REPORTE SEPT']){const dws=book.Sheets['DETALLE REPORTE SEPT']; DATA.detalle=parseDetalleSheet(dws); DATA.summary=parseDetalleSummary(dws); DATA.breakdowns=parseDetalleBreakdowns(dws);}
-            if(book.Sheets['VACANTES OFICIALES SEPT']) DATA.vacantes=parseVacantesSheet(book.Sheets['VACANTES OFICIALES SEPT']);
-            if(book.Sheets['VACANTES ADMINISTRATIVOS']) DATA.vacantes_admon=parseVacantesAdministrativosSheet(book.Sheets['VACANTES ADMINISTRATIVOS']);
-            if(book.Sheets['DOCENTES REINTEGROS']) teachers=teachers.concat(parseTeacherSheet(book.Sheets['DOCENTES REINTEGROS'],'Reintegro'));
-            if(book.Sheets['DOCENTES NUEVOS']) teachers=teachers.concat(parseTeacherSheet(book.Sheets['DOCENTES NUEVOS'],'Nuevo'));
-        });
-        
-        if(teachers.length) DATA.teachers=teachers;
-        
-        filters.forEach(id=>el(id).value=''); el('searchBox').value=''; 
-        if(el('syncText')) el('syncText').textContent='Datos actualizados desde Google Drive (Seguro)'; 
+        el('syncText').textContent = 'Datos actualizados desde Google Scripts (Pestañas SEPT)';
         render();
-        
         el('loadingOverlay').style.display = 'none';
-        if(el('updateCloudBtn')) {
-            el('updateCloudBtn').innerText = '☁️ Actualizado';
-            setTimeout(() => { el('updateCloudBtn').innerText = '☁️ Actualizar (Google)'; el('updateCloudBtn').style.opacity = '1'; }, 3000);
-        }
-        
-    } catch(err) {
-        el('loadingOverlay').style.display = 'none';
-        alert('Error: ' + err.message + "\n\nRecuerda: Si estás abriendo el archivo localmente en tu PC, el navegador bloquea la descarga por seguridad. ¡Súbelo a GitHub para que funcione!");
-        if(el('updateCloudBtn')) {
-            el('updateCloudBtn').innerText = '☁️ Actualizar (Google)';
-            el('updateCloudBtn').style.opacity = '1';
-        }
+    } catch (error) {
+        console.error("Error fetching data:", error);
+        el('loadingOverlay').innerHTML = "<p style='color:red'>Error cargando los datos. Revisa la consola para más detalles.</p>";
+        setTimeout(() => el('loadingOverlay').style.display = 'none', 5000);
     }
 }
 
-if(el('updateCloudBtn')) {
-    el('updateCloudBtn').addEventListener('click', loadDataFromGoogle);
-}
+el('btnSyncGoogle').addEventListener('click', fetchGoogleData);
 
-if(el('downloadPdfBtn')) {
-    el('downloadPdfBtn').addEventListener('click', () => {
-        const actions = document.querySelector('.filter-actions');
-        if(actions) actions.style.display = 'none';
-        
-        const opt = {
-            margin:       [5, 5, 5, 5],
-            filename:     'Dashboard_Contratacion.pdf',
-            image:        { type: 'jpeg', quality: 0.98 },
-            html2canvas:  { scale: 2, useCORS: true },
-            jsPDF:        { unit: 'mm', format: 'a3', orientation: 'landscape' }
-        };
-        
-        html2pdf().set(opt).from(document.body).save().then(() => {
-            if(actions) actions.style.display = 'flex';
-        });
-    });
-}
+el('btnSaveHTML').addEventListener('click', () => {
+    // Actualizar el script incrustado
+    const scriptTag = el('embeddedData');
+    if(scriptTag) {
+        scriptTag.textContent = JSON.stringify(DATA);
+    }
+    
+    // Preparar el HTML
+    const htmlContent = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+    const blob = new Blob([htmlContent], {type: "text/html;charset=utf-8"});
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "Dashboard_Exportado_" + new Date().toISOString().split('T')[0] + ".html";
+    a.click();
+});
 
-window.addEventListener("DOMContentLoaded", loadDataFromGoogle);
-// --- FIN LOGICA ---
+// Render inicial con datos incrustados
+render();
 
+// Carga asíncrona automática
+fetchGoogleData();
 </script>
-
-<div id="loadingOverlay" style="position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(255,255,255,0.95); z-index:9999; display:none; flex-direction:column; justify-content:center; align-items:center; text-align:center;">
-   <h2 style="color:#0B5CD7; font-size: 28px; margin-bottom: 10px;">☁️ Descargando Datos en Vivo</h2>
-   <p style="color:#60728B; font-size: 16px;">Conectando de forma segura con Google Drive...</p>
-</div>
 </body>
 </html>
